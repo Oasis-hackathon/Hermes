@@ -55,6 +55,9 @@ def before_request():
 def Welcome():
     return app.send_static_file('index.html')
 
+@app.route('/clerk')
+def Order():
+    return  app.send_static_file('clerk.html')
 
 @app.route('/api/conversation', methods=['POST', 'GET'])
 def getConvResponse():
@@ -84,7 +87,7 @@ def getSpeechFromText():
             audioOut = ttsService.synthesize(
                 inputText,
                 accept='audio/wav',
-                voice='en-US_AllisonVoice').get_result()
+                voice='ko-KR_YunaVoice').get_result()
 
             data = audioOut.content
         else:
@@ -102,12 +105,13 @@ def getTextFromSpeech():
     sttService = SpeechToTextV1()
 
     response = sttService.recognize(
-            audio=request.get_data(cache=False),
+        audio=request.get_data(cache=False),
+            model='ko-KR_NarrowbandModel',
             content_type='audio/wav',
             timestamps=True,
             word_confidence=True,
             smart_formatting=True).get_result()
-
+    print(response)
     # Ask user to repeat if STT can't transcribe the speech
     if len(response['results']) < 1:
         return Response(mimetype='plain/text',
@@ -118,7 +122,7 @@ def getTextFromSpeech():
     return Response(response=text_output, mimetype='plain/text')
 
 
-port = os.environ.get("PORT") or os.environ.get("VCAP_APP_PORT") or 5000
+port = os.environ.get("PORT") or os.environ.get("VCAP_APP_PORT") or 3000
 if __name__ == "__main__":
     load_dotenv()
 
@@ -127,4 +131,5 @@ if __name__ == "__main__":
                      get_authenticator_from_environment('conversation'))
     assistant = AssistantV1(version="2019-11-06", authenticator=authenticator)
     workspace_id = assistant_setup.init_skill(assistant)
+
     socketio.run(app, host='0.0.0.0', port=int(port))
